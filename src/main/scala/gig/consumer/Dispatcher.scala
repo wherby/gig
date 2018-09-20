@@ -5,17 +5,25 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
 import cakesolutions.kafka.akka.KafkaConsumerActor.Confirm
 import cakesolutions.kafka.akka.{ConsumerRecords, KafkaConsumerActor, Offsets}
+import gig.consumer.Consumer.FanOutConf
 import gig.msg.ControlMsg.{GigConsumerMsg, RecorderFinish, TimeOutMsg}
 import gig.msg.ConsumerMsg._
 import org.apache.kafka.clients.consumer
+
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class Dispatcher(downstreamActor: ActorRef) extends Actor with ActorLogging {
+object Dispatcher{
+  def recordeProps(fanOutConf: FanOutConf)={
+    Props(new RecorderActor(fanOutConf))
+  }
+}
+
+class Dispatcher(downstreamActor: ActorRef,fanOutConf: FanOutConf) extends Actor with ActorLogging {
 
   var cancelableTimeOut :Cancellable=_
   var replyTo:ActorRef =_
-  val recorderActor: ActorRef = context.actorOf(Props[RecorderActor],"Recorder")
+  val recorderActor: ActorRef = context.actorOf(Dispatcher.recordeProps(fanOutConf),"Recorder")
 
   def receive = {
     case GigConsumerMsg(reply,consumerRecords)=>

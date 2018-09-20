@@ -1,7 +1,9 @@
 package gig.consumer
 
 import akka.actor.{Actor, ActorLogging}
+import cakesolutions.kafka.KafkaProducerRecord
 import cakesolutions.kafka.akka.{ConsumerRecords, Offsets}
+import gig.consumer.Consumer.FanOutConf
 import gig.model.MsgRecorder
 import gig.msg.ConsumerMsg.{GigAckIndex, GigAckOffset, GigFailedIndex, GigFailedOffset}
 import gig.msg.ControlMsg.{RecorderFinish, TimeOutMsg}
@@ -14,7 +16,7 @@ import scala.collection.JavaConverters._
   * For gig.consumer in gig
   * Created by whereby[Tao Zhou](187225577@qq.com) on 2018/9/1
   */
-class RecorderActor extends Actor with ActorLogging {
+class RecorderActor(fanOutConf: FanOutConf=FanOutConf()) extends Actor with ActorLogging {
   val recorder: MsgRecorder = new MsgRecorder()
   var offsetsRecord: Offsets = _
   var consumerRecords: consumer.ConsumerRecords[Any, Any] = _
@@ -55,16 +57,27 @@ class RecorderActor extends Actor with ActorLogging {
 
   private def recordResultToKafka(consumerRecords: consumer.ConsumerRecords[Any, Any], isIndexRecordAcK: (TopicPartition, Long) => Boolean): Unit = {
     log.debug(s"start result Logging : $offsetsRecord")
-    consumerRecords.partitions().asScala map {
-      topic =>
-        consumerRecords.records(topic).asScala.zipWithIndex.map {
-          record =>
-            if (isIndexRecordAcK(topic, record._2.toLong)) {
-              log.debug(s"send record to processed Topic: ${record._1}")
-            } else {
-              log.debug(s"send record to not processed Topic ${record._1}")
-            }
-        }
+    fanOutConf.rightActor.map{
+      rightActor=>consumerRecords.partitions().asScala map {
+        topic =>
+          consumerRecords.records(topic).asScala.zipWithIndex.map {
+            record =>
+              if (isIndexRecordAcK(topic, record._2.toLong)) {
+                rightActor !KafkaProducerRecord(topic.toString,record._1.key(),record._1.value())
+              }
+          }
+      }
+    }
+    fanOutConf.leftActor.map{
+      leftActor =>consumerRecords.partitions().asScala map {
+        topic =>
+          consumerRecords.records(topic).asScala.zipWithIndex.map {
+            record =>
+              if (!isIndexRecordAcK(topic, record._2.toLong)) {
+                leftActor ! KafkaProducerRecord(topic.toString,record._1.key(),record._1.value())
+              }
+          }
+      }
     }
     sender() ! RecorderFinish(offsetsRecord)
   }
