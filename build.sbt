@@ -7,7 +7,7 @@ import sbtassembly.AssemblyPlugin.autoImport._
 import Dependencies._
 
 
-
+resolvers += Resolver.bintrayRepo("cakesolutions", "maven")
 
 //https://github.com/cakesolutions/scala-kafka-client/wiki/Scala-Kafka-Client
 
