@@ -16,7 +16,7 @@ lazy val `gig` = project
   .settings(multiJvmSettings: _*)
   .settings(
     name := "gig",
-    version := "0.2.1-SNAPSHOT",
+    version := "0.2.3-SNAPSHOT",
     organization := "io.github.wherby",
     scalaVersion := "2.12.2",
     scalacOptions in Compile ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlog-reflective-calls", "-Xlint"),
