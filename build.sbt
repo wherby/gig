@@ -46,9 +46,9 @@ lazy val `gig` = project
   .configs (MultiJvm)
 
 
-useGpg := true
+ThisBuild /useGpg := true
 
-publishTo := {
+ThisBuild / publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (version.value.contains("SNAPSHOT"))
     Some("snapshots" at nexus + "content/repositories/snapshots")
@@ -56,18 +56,18 @@ publishTo := {
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
-licenses := Seq("GPL-3.0" -> url("https://opensource.org/licenses/GPL-3.0"))
+ThisBuild /licenses := Seq("GPL-3.0" -> url("https://opensource.org/licenses/GPL-3.0"))
 
-homepage := Some(url("https://github.com/wherby/gig"))
+ThisBuild /homepage := Some(url("https://github.com/wherby/gig"))
 
-scmInfo := Some(
+ThisBuild /scmInfo := Some(
   ScmInfo(
     url("https://github.com/wherby/gig.git"),
     "scm:git@github.com:wherby/gig.git"
   )
 )
 
-developers := List(
+ThisBuild /developers := List(
   Developer(
     id    = "wherby",
     name  = "Tao Zhou",
